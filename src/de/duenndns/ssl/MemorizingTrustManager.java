@@ -96,6 +96,8 @@ public class MemorizingTrustManager implements X509TrustManager {
 	private X509TrustManager defaultTrustManager;
 	private X509TrustManager appTrustManager;
 
+	private boolean trustByDefault = false;
+
 	/** Creates an instance of the MemorizingTrustManager class that falls back to a custom TrustManager.
 	 *
 	 * You need to supply the application context. This has to be one of:
@@ -215,6 +217,14 @@ public class MemorizingTrustManager implements X509TrustManager {
 	public static void setKeyStoreFile(String dirname, String filename) {
 		KEYSTORE_DIR = dirname;
 		KEYSTORE_FILE = filename;
+	}
+
+	/**
+	 * Set "Trust by default" flag. If true - no user interaction would be proposed.
+	 * All mismatched server names of incorrect certificates would be alsways trusted.
+	 */
+	public void setTrustByDefault(boolean trustByDefault) {
+		this.trustByDefault = trustByDefault;
 	}
 
 	/**
@@ -627,6 +637,11 @@ public class MemorizingTrustManager implements X509TrustManager {
 	void interactCert(final X509Certificate[] chain, String authType, CertificateException cause)
 			throws CertificateException
 	{
+		if (trustByDefault) {
+			storeCert(chain[0]); // only store the server cert, not the whole chain
+			return;
+		}
+
 		switch (interact(certChainMessage(chain, cause), R.string.mtm_accept_cert)) {
 		case MTMDecision.DECISION_ALWAYS:
 			storeCert(chain[0]); // only store the server cert, not the whole chain
@@ -639,6 +654,11 @@ public class MemorizingTrustManager implements X509TrustManager {
 
 	boolean interactHostname(X509Certificate cert, String hostname)
 	{
+		if (trustByDefault) {
+			storeCert(hostname, cert);
+			return true;
+		}
+
 		switch (interact(hostNameMessage(cert, hostname), R.string.mtm_accept_servername)) {
 		case MTMDecision.DECISION_ALWAYS:
 			storeCert(hostname, cert);
