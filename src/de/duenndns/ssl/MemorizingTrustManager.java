@@ -39,7 +39,6 @@ import android.util.SparseArray;
 import android.os.Handler;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.cert.*;
@@ -338,13 +337,13 @@ public class MemorizingTrustManager implements X509TrustManager {
 			is = new java.io.FileInputStream(keyStoreFile);
 			ks.load(is, "MTM".toCharArray());
 		} catch (NoSuchAlgorithmException | CertificateException | IOException e) {
-			LOGGER.log(Level.INFO, "getAppKeyStore(" + keyStoreFile + ") - exception loading file key store");
+			LOGGER.log(Level.INFO, "getAppKeyStore(" + keyStoreFile + ") - exception loading file key store", e);
 		} finally {
 			if (is != null) {
 				try {
 					is.close();
 				} catch (IOException e) {
-					LOGGER.log(Level.FINE, "getAppKeyStore(" + keyStoreFile + ") - exception closing file key store input stream");
+					LOGGER.log(Level.FINE, "getAppKeyStore(" + keyStoreFile + ") - exception closing file key store input stream", e);
 				}
 			}
 		}
@@ -396,7 +395,7 @@ public class MemorizingTrustManager implements X509TrustManager {
 		}
 	}
 
-	private boolean isExpiredException(Throwable e) {
+	private static boolean isExpiredException(Throwable e) {
 		do {
 			if (e instanceof CertificateExpiredException)
 				return true;
@@ -405,7 +404,7 @@ public class MemorizingTrustManager implements X509TrustManager {
 		return false;
 	}
 
-	private boolean isPathException(Throwable e) {
+	private static boolean isPathException(Throwable e) {
 		do {
 			if (e instanceof CertPathValidatorException)
 				return true;
@@ -425,7 +424,7 @@ public class MemorizingTrustManager implements X509TrustManager {
 			else
 				appTrustManager.checkClientTrusted(chain, authType);
 		} catch (CertificateException ae) {
-			LOGGER.log(Level.FINER, "checkCertTrusted: appTrustManager failed", ae);
+			LOGGER.log(Level.FINER, "checkCertTrusted: appTrustManager did not verify certificate. Will fall back to secondary verification mechanisms (if any).", ae);
 			// if the cert is stored in our appTrustManager, we ignore expiredness
 			if (isExpiredException(ae)) {
 				LOGGER.log(Level.INFO, "checkCertTrusted: accepting expired certificate from keystore");
@@ -436,8 +435,10 @@ public class MemorizingTrustManager implements X509TrustManager {
 				return;
 			}
 			try {
-				if (defaultTrustManager == null)
+				if (defaultTrustManager == null) {
+					LOGGER.fine("No defaultTrustManager set. Verification failed, throwing " + ae);
 					throw ae;
+				}
 				LOGGER.log(Level.FINE, "checkCertTrusted: trying defaultTrustManager");
 				if (isServer)
 					defaultTrustManager.checkServerTrusted(chain, authType);
@@ -468,7 +469,7 @@ public class MemorizingTrustManager implements X509TrustManager {
 		return defaultTrustManager.getAcceptedIssuers();
 	}
 
-	private int createDecisionId(MTMDecision d) {
+	private static int createDecisionId(MTMDecision d) {
 		int myId;
 		synchronized(openDecisions) {
 			myId = decisionId;
@@ -479,7 +480,7 @@ public class MemorizingTrustManager implements X509TrustManager {
 	}
 
 	private static String hexString(byte[] data) {
-		StringBuffer si = new StringBuffer();
+		StringBuilder si = new StringBuilder();
 		for (int i = 0; i < data.length; i++) {
 			si.append(String.format("%02x", data[i]));
 			if (i < data.length - 1)
@@ -500,7 +501,7 @@ public class MemorizingTrustManager implements X509TrustManager {
 		}
 	}
 
-	private void certDetails(StringBuffer si, X509Certificate c) {
+	private static void certDetails(StringBuilder si, X509Certificate c) {
 		SimpleDateFormat validityDateFormater = new SimpleDateFormat("yyyy-MM-dd");
 		si.append("\n");
 		si.append(c.getSubjectDN().toString());
@@ -520,7 +521,7 @@ public class MemorizingTrustManager implements X509TrustManager {
 	private String certChainMessage(final X509Certificate[] chain, CertificateException cause) {
 		Throwable e = cause;
 		LOGGER.log(Level.FINE, "certChainMessage for " + e);
-		StringBuffer si = new StringBuffer();
+		StringBuilder si = new StringBuilder();
 		if (isPathException(e))
 			si.append(master.getString(R.string.mtm_trust_anchor));
 		else if (isExpiredException(e))
@@ -542,7 +543,7 @@ public class MemorizingTrustManager implements X509TrustManager {
 	}
 
 	private String hostNameMessage(X509Certificate cert, String hostname) {
-		StringBuffer si = new StringBuffer();
+		StringBuilder si = new StringBuilder();
 
 		si.append(master.getString(R.string.mtm_hostname_mismatch, hostname));
 		si.append("\n\n");
@@ -555,7 +556,7 @@ public class MemorizingTrustManager implements X509TrustManager {
 				Object name = altName.get(1);
 				if (name instanceof String) {
 					si.append("[");
-					si.append((Integer)altName.get(0));
+					si.append(altName.get(0));
 					si.append("] ");
 					si.append(name);
 					si.append("\n");
