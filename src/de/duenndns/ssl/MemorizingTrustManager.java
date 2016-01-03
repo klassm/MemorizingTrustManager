@@ -35,6 +35,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.util.SparseArray;
 import android.os.Handler;
 
@@ -569,14 +570,22 @@ public class MemorizingTrustManager implements X509TrustManager {
 	// We can use Notification.Builder once MTM's minSDK is >= 11
 	@SuppressWarnings("deprecation")
 	void startActivityNotification(Intent intent, int decisionId, String certName) {
-		Notification n = new Notification(android.R.drawable.ic_lock_lock,
-				master.getString(R.string.mtm_notification),
-				System.currentTimeMillis());
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+			LOGGER.warning("Can't fallback showing a notification. Android API level to low, requires at least 11 but was "
+					+ Build.VERSION.SDK_INT);
+			return;
+		}
+
 		PendingIntent call = PendingIntent.getActivity(master, 0, intent, 0);
-		n.setLatestEventInfo(master.getApplicationContext(),
-				master.getString(R.string.mtm_notification),
-				certName, call);
-		n.flags |= Notification.FLAG_AUTO_CANCEL;
+		final Notification n = new Notification.Builder(master)
+				.setContentTitle(master.getString(R.string.mtm_notification))
+				.setContentText(certName)
+				.setTicker(certName)
+				.setSmallIcon(android.R.drawable.ic_lock_lock)
+				.setWhen(System.currentTimeMillis())
+				.setContentIntent(call)
+				.setAutoCancel(true)
+				.build();
 
 		notificationManager.notify(NOTIFICATION_ID + decisionId, n);
 	}

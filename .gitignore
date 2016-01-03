@@ -9,4 +9,9 @@ tags
 .classpath
 .gradle
 .*.swp
-/.settings
+
+.idea
+
+*.iml
+
+/gradle.properties
