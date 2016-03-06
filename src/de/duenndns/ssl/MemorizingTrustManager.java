@@ -92,9 +92,9 @@ public class MemorizingTrustManager implements X509TrustManager {
 
 	Handler masterHandler;
 	private File keyStoreFile;
-	private KeyStore appKeyStore;
-	private X509TrustManager defaultTrustManager;
-	private X509TrustManager appTrustManager;
+	protected KeyStore appKeyStore;
+	protected X509TrustManager defaultTrustManager;
+	protected X509TrustManager appTrustManager;
 
 	/** Creates an instance of the MemorizingTrustManager class that falls back to a custom TrustManager.
 	 *
@@ -647,7 +647,7 @@ public class MemorizingTrustManager implements X509TrustManager {
 		}
 	}
 
-	boolean interactHostname(X509Certificate cert, String hostname)
+	protected boolean interactHostname(X509Certificate cert, String hostname)
 	{
 		switch (interact(hostNameMessage(cert, hostname), R.string.mtm_accept_servername)) {
 		case MTMDecision.DECISION_ALWAYS:
