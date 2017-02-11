@@ -15,3 +15,5 @@ tags
 *.iml
 
 /gradle.properties
+/.settings
+/MemorizingTrustManager.iml
