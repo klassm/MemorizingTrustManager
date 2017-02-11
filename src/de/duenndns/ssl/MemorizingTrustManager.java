@@ -35,6 +35,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.support.v7.app.NotificationCompat;
 import android.os.Build;
 import android.util.SparseArray;
 import android.os.Build;
@@ -98,6 +99,8 @@ public class MemorizingTrustManager implements X509TrustManager {
 	protected KeyStore appKeyStore;
 	protected X509TrustManager defaultTrustManager;
 	protected X509TrustManager appTrustManager;
+
+	private boolean trustByDefault = false;
 
 	/** Creates an instance of the MemorizingTrustManager class that falls back to a custom TrustManager.
 	 *
@@ -218,6 +221,14 @@ public class MemorizingTrustManager implements X509TrustManager {
 	public static void setKeyStoreFile(String dirname, String filename) {
 		KEYSTORE_DIR = dirname;
 		KEYSTORE_FILE = filename;
+	}
+
+	/**
+	 * Set "Trust by default" flag. If true - no user interaction would be proposed.
+	 * All mismatched server names of incorrect certificates would be alsways trusted.
+	 */
+	public void setTrustByDefault(boolean trustByDefault) {
+		this.trustByDefault = trustByDefault;
 	}
 
 	/**
@@ -570,6 +581,7 @@ public class MemorizingTrustManager implements X509TrustManager {
 		return si.toString();
 	}
 
+
 	/**
 	 * Reflectively call
 	 * <code>Notification.setLatestEventInfo(Context, CharSequence, CharSequence, PendingIntent)</code>
@@ -686,6 +698,11 @@ public class MemorizingTrustManager implements X509TrustManager {
 	void interactCert(final X509Certificate[] chain, String authType, CertificateException cause)
 			throws CertificateException
 	{
+		if (trustByDefault) {
+			storeCert(chain[0]); // only store the server cert, not the whole chain
+			return;
+		}
+
 		switch (interact(certChainMessage(chain, cause), R.string.mtm_accept_cert)) {
 		case MTMDecision.DECISION_ALWAYS:
 			storeCert(chain[0]); // only store the server cert, not the whole chain
@@ -698,6 +715,11 @@ public class MemorizingTrustManager implements X509TrustManager {
 
 	protected boolean interactHostname(X509Certificate cert, String hostname)
 	{
+		if (trustByDefault) {
+			storeCert(hostname, cert);
+			return true;
+		}
+
 		switch (interact(hostNameMessage(cert, hostname), R.string.mtm_accept_servername)) {
 		case MTMDecision.DECISION_ALWAYS:
 			storeCert(hostname, cert);
