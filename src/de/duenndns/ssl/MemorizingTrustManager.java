@@ -622,7 +622,7 @@ public class MemorizingTrustManager implements X509TrustManager {
 		final long currentMillis = System.currentTimeMillis();
 		final Context context = master.getApplicationContext();
 
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+		if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.JELLY_BEAN) {
 			@SuppressWarnings("deprecation")
 			// Use an extra identifier for the legacy build notification, so
 			// that we suppress the deprecation warning. We will latter assign
@@ -642,6 +642,8 @@ public class MemorizingTrustManager implements X509TrustManager {
 					.setWhen(currentMillis)
 					.setContentIntent(call)
 					.setAutoCancel(true)
+					.setPriority(Notification.PRIORITY_MAX)
+					.setDefaults(Notification.DEFAULT_ALL)
 					.build();
 		}
 
