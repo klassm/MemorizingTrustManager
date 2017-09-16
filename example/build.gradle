@@ -1,23 +1,29 @@
 apply plugin: 'com.android.application'
 
+repositories {
+    mavenCentral()
+    jcenter()
+    maven { url "https://maven.google.com" }
+}
+
 dependencies {
-	compile rootProject
+    compile rootProject
 }
 
 android {
-	compileSdkVersion 25
-	buildToolsVersion "25.0.2"
-	defaultConfig {
-		minSdkVersion 14
-		targetSdkVersion 25
-	}
+    compileSdkVersion 26
+    buildToolsVersion "26.0.1"
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 26
+    }
 
-	sourceSets {
-		main {
-			manifest.srcFile 'AndroidManifest.xml'
-			java.srcDirs = ['src']
-			res.srcDirs = ['res']
-		}
-	}
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src']
+            res.srcDirs = ['res']
+        }
+    }
 
 }
