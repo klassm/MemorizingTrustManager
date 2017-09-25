@@ -143,22 +143,12 @@ public class MemorizingTrustManager implements X509TrustManager {
         this.defaultTrustManager = getTrustManager(null);
     }
 
-    void init(Context m) {
-        master = m;
-        masterHandler = new Handler(m.getMainLooper());
+    void init(Context context) {
+        master = context;
+        masterHandler = new Handler(context.getMainLooper());
         notificationManager = (NotificationManager) master.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        Application app;
-        if (m instanceof Application) {
-            app = (Application) m;
-        } else if (m instanceof Service) {
-            app = ((Service) m).getApplication();
-        } else if (m instanceof Activity) {
-            app = ((Activity) m).getApplication();
-        } else
-            throw new ClassCastException("MemorizingTrustManager context must be either Activity or Service!");
-
-        File dir = app.getDir(KEYSTORE_DIR, Context.MODE_PRIVATE);
+        File dir = context.getDir(KEYSTORE_DIR, Context.MODE_PRIVATE);
         keyStoreFile = new File(dir + File.separator + KEYSTORE_FILE);
 
         appKeyStore = loadAppKeyStore();
