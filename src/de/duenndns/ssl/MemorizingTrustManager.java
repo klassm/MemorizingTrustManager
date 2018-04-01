@@ -26,6 +26,7 @@
  */
 package de.duenndns.ssl;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Application;
 import android.app.Notification;
